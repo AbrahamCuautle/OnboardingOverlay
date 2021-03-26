@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btn).setOnClickListener {
             Log.d("TAG_APP", "Post")
             OnboardingOverlay.Builder(this)
-                .setBackgroundColor(android.R.color.black)
+                .setBackgroundColor(R.color.design_default_color_secondary)
                 .setMode(OnboardingOverlay.Mode.CIRCLE)
                 .build()
                 .show(findViewById(R.id.btn))

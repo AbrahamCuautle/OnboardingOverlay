@@ -1,5 +1,6 @@
 package com.abrahamcuautle.onboardingoverlay;
 
+import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -10,11 +11,14 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewAnimationUtils;
 import android.view.WindowManager;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -150,6 +154,70 @@ OnboardingOverlay {
         }
 
 
+        @Override
+        protected void onAttachedToWindow() {
+            super.onAttachedToWindow();
+            startOpenCircleReveal();
+        }
+
+        private void startOpenCircleReveal() {
+            if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
+                DisplayMetrics metrics = new DisplayMetrics();
+                mWindowManager.getDefaultDisplay().getMetrics(metrics);
+                int height = metrics.heightPixels;
+
+                int[] location = new int[2];
+                mReferenceView.getLocationOnScreen(location);
+                float cx = (float) (location[0] +  (mReferenceView.getWidth() / 2));
+                float cy = (float) (location[1] + (mReferenceView.getHeight() / 2));
+
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int)cx, (int)cy, 0, height);
+                animator.setInterpolator(new AccelerateDecelerateInterpolator());
+                animator.setDuration(700L);
+                animator.start();
+            }
+        }
+
+        private void startCloseCircleReveal() {
+            if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
+                DisplayMetrics metrics = new DisplayMetrics();
+                mWindowManager.getDefaultDisplay().getMetrics(metrics);
+                int height = metrics.heightPixels;
+
+                int[] location = new int[2];
+                mReferenceView.getLocationOnScreen(location);
+                float cx = (float) (location[0] +  (mReferenceView.getWidth() / 2));
+                float cy = (float) (location[1] + (mReferenceView.getHeight() / 2));
+
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int)cx, (int)cy, height, 0);
+                animator.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        setVisibility(GONE);
+                        dismiss();
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+
+                    }
+                });
+                animator.setInterpolator(new AccelerateDecelerateInterpolator());
+                animator.setDuration(700L);
+                animator.start();
+            }
+        }
+
         private LinearLayout createContainer() {
             LinearLayout container = new LinearLayout(getContext());
             container.setOrientation(LinearLayout.VERTICAL);
@@ -218,7 +286,7 @@ OnboardingOverlay {
                 } else if (event.getAction() == KeyEvent.ACTION_UP) {
                     final KeyEvent.DispatcherState state = getKeyDispatcherState();
                     if (state != null && state.isTracking(event) && !event.isCanceled()) {
-                        dismiss();
+                        startCloseCircleReveal();
                         return true;
                     }
                 }
