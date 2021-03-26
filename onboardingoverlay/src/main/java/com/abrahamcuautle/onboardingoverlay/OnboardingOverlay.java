@@ -1,28 +1,24 @@
 package com.abrahamcuautle.onboardingoverlay;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
-import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.ListAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.ColorRes;
@@ -33,8 +29,6 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 
 import com.google.android.material.button.MaterialButton;
-
-import org.w3c.dom.Text;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -52,6 +46,10 @@ OnboardingOverlay {
     private View mOverlayView;
 
     private View mReferenceView;
+
+    private int mReferenceViewX;
+
+    private int mReferenceViewY;
 
     private int mMode;
 
@@ -81,12 +79,14 @@ OnboardingOverlay {
         }
 
         this.mReferenceView = view;
+        computeXAndYReferenceView();
 
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_PANEL,
-                0,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                        WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR,
                 PixelFormat.TRANSLUCENT);
 
         mOverlayView = new OverLayView(mContext);
@@ -94,6 +94,13 @@ OnboardingOverlay {
         if (mWindowManager != null) {
             mWindowManager.addView(mOverlayView, lp);
         }
+    }
+
+    private void computeXAndYReferenceView() {
+        int[] location = new int[2];
+        mReferenceView.getLocationOnScreen(location);
+        mReferenceViewX = location[0];
+        mReferenceViewY = location[1];
     }
 
     public void dismiss() {
@@ -153,6 +160,21 @@ OnboardingOverlay {
             addView(createContainer());
         }
 
+        private void setMargins(LayoutParams layoutParams){
+            if(mReferenceView != null && !ViewCompat.isAttachedToWindow(mReferenceView)) {
+                return;
+            }
+
+            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            mWindowManager.getDefaultDisplay().getMetrics(metrics);
+
+            float cx = (float) (mReferenceViewX + (mReferenceView.getWidth() / 2));
+            float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
+
+        }
+
 
         @Override
         protected void onAttachedToWindow() {
@@ -162,58 +184,38 @@ OnboardingOverlay {
 
         private void startOpenCircleReveal() {
             if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
-                DisplayMetrics metrics = new DisplayMetrics();
-                mWindowManager.getDefaultDisplay().getMetrics(metrics);
-                int height = metrics.heightPixels;
 
-                int[] location = new int[2];
-                mReferenceView.getLocationOnScreen(location);
-                float cx = (float) (location[0] +  (mReferenceView.getWidth() / 2));
-                float cy = (float) (location[1] + (mReferenceView.getHeight() / 2));
+                int heightScreen = DisplayUtils.getHeightScreen(mWindowManager);
 
-                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int)cx, (int)cy, 0, height);
+                float cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
+                float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
+
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int)cx, (int)cy, 0, heightScreen);
                 animator.setInterpolator(new AccelerateDecelerateInterpolator());
-                animator.setDuration(700L);
+                animator.setDuration(500L);
                 animator.start();
             }
         }
 
         private void startCloseCircleReveal() {
             if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
-                DisplayMetrics metrics = new DisplayMetrics();
-                mWindowManager.getDefaultDisplay().getMetrics(metrics);
-                int height = metrics.heightPixels;
 
-                int[] location = new int[2];
-                mReferenceView.getLocationOnScreen(location);
-                float cx = (float) (location[0] +  (mReferenceView.getWidth() / 2));
-                float cy = (float) (location[1] + (mReferenceView.getHeight() / 2));
+                int height = DisplayUtils.getHeightScreen(mWindowManager);
 
-                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int)cx, (int)cy, height, 0);
-                animator.addListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animation) {
+                float cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
+                float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
 
-                    }
-
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int) cx, (int) cy, height, 0);
+                animator.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
+                        super.onAnimationEnd(animation);
                         setVisibility(GONE);
                         dismiss();
                     }
-
-                    @Override
-                    public void onAnimationCancel(Animator animation) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-
-                    }
                 });
                 animator.setInterpolator(new AccelerateDecelerateInterpolator());
-                animator.setDuration(700L);
+                animator.setDuration(500L);
                 animator.start();
             }
         }
@@ -262,11 +264,13 @@ OnboardingOverlay {
         }
 
         private MaterialButton createButton() {
-            MaterialButton button = new MaterialButton(new ContextThemeWrapper(
-                    getContext(), R.style.Widget_MaterialComponents_Button_OutlinedButton));
+            MaterialButton button = new MaterialButton(
+                    getContext(), null, R.attr.materialButtonOutlinedStyle);
             button.setTextSize(14);
             button.setTextColor(Color.WHITE);
             button.setText("Got it!");
+            button.setStrokeWidth(0);
+            button.setRippleColor(ColorStateList.valueOf(Color.WHITE));
             return button;
         }
 
@@ -296,12 +300,11 @@ OnboardingOverlay {
             }
         }
 
-
     }
 
     private class BackgroundOverlayView extends View {
 
-        private final Paint mPaintCircle = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint mPaintReference = new Paint(Paint.ANTI_ALIAS_FLAG);
 
         private final Paint mPaintBackground = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -311,13 +314,19 @@ OnboardingOverlay {
 
         private float cy;
 
+        private float mRectSide;
+
+        private final float mRectSpacing = 10;
+
+        private final float mCornerRadius = 15;
+
         private ValueAnimator valueAnimator;
 
         public BackgroundOverlayView(Context context) {
             super(context);
 
-            mPaintCircle.setColor(Color.RED);
-            mPaintCircle.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
+            mPaintReference.setColor(Color.RED);
+            mPaintReference.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
 
             mPaintBackground.setColor(mBackgroundColor);
 
@@ -325,27 +334,58 @@ OnboardingOverlay {
                 mRadius = (float) Math.max(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
                 mRadius += 8; //Add Extra Spacing
 
-                int[] location = new int[2];
-                mReferenceView.getLocationOnScreen(location);
-                cx = (float) (location[0] +  (mReferenceView.getWidth() / 2));
-                cy = (float) (location[1] + (mReferenceView.getHeight() / 2));
+                cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
+                cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
             }
 
-            setUpCircleAnimator();
+            switch (mMode) {
+                case Mode.CIRCLE:
+                    setUpCircleAnimator();
+                    break;
+                case Mode.RECTANGLE:
+                    setUpRoundRectAnimator();
+                    break;
+            }
 
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
-            Log.d("TAG_APP", "Canvas");
             if (valueAnimator != null && !valueAnimator.isRunning()) {
                 valueAnimator.start();
             }
             canvas.drawRect(0, 0, getWidth(), getHeight(), mPaintBackground);
-            canvas.drawCircle(cx, cy, mRadius, mPaintCircle);
+            switch (mMode) {
+                case Mode.CIRCLE:
+                    canvas.drawCircle(cx, cy, mRadius, mPaintReference);
+                    break;
+                case Mode.RECTANGLE:
+                    if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
+                        canvas.drawRoundRect(
+                               mReferenceViewX - mRectSpacing - mRectSide,
+                               mReferenceViewY - mRectSpacing - mRectSide,
+                               mReferenceViewX + mReferenceView.getWidth() + mRectSpacing + mRectSide,
+                                mReferenceViewY + mReferenceView.getHeight() + mRectSpacing + mRectSide,
+                                mCornerRadius,
+                                mCornerRadius,
+                                mPaintReference
+                        );
+                    }
+                    break;
+            }
         }
 
+        private void setUpRoundRectAnimator() {
+            valueAnimator = ValueAnimator.ofFloat(0f, 15f);
+            valueAnimator.addUpdateListener(animation -> {
+                mRectSide = (float) animation.getAnimatedValue();
+                invalidate();
+            });
+            valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
+            valueAnimator.setRepeatMode(ValueAnimator.REVERSE);
+            valueAnimator.setDuration(500L);
+        }
 
         private void setUpCircleAnimator() {
             valueAnimator = ValueAnimator.ofFloat(mRadius, mRadius + 15);
