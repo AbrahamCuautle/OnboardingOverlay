@@ -2,16 +2,24 @@ package com.abrahamcuautle.onboardingoverlay
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        OnboardingOverlay.Builder(this)
-            .setBackgroundColor(R.color.design_default_color_primary)
-            .setMode(OnboardingOverlay.Mode.CIRCLE)
-            .build()
+        findViewById<View>(R.id.btn).setOnClickListener {
+            Log.d("TAG_APP", "Post")
+            OnboardingOverlay.Builder(this)
+                .setBackgroundColor(android.R.color.black)
+                .setMode(OnboardingOverlay.Mode.CIRCLE)
+                .build()
+                .show(findViewById(R.id.btn))
+        }
+
+
 
     }
 }
