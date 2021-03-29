@@ -11,12 +11,16 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.util.DisplayMetrics;
+import android.os.Build;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewAnimationUtils;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.AbsoluteLayout;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -27,6 +31,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.ViewKt;
 
 import com.google.android.material.button.MaterialButton;
 
@@ -34,8 +39,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 
-public class
-OnboardingOverlay {
+import kotlin.Unit;
+import kotlin.jvm.functions.Function1;
+
+public class OnboardingOverlay {
 
     private WindowManager mWindowManager;
 
@@ -52,6 +59,8 @@ OnboardingOverlay {
     private int mReferenceViewY;
 
     private int mMode;
+
+    private int mGravityContent;
 
     private boolean mIsShowing;
 
@@ -98,7 +107,7 @@ OnboardingOverlay {
 
     private void computeXAndYReferenceView() {
         int[] location = new int[2];
-        mReferenceView.getLocationOnScreen(location);
+        mReferenceView.getLocationInWindow(location);
         mReferenceViewX = location[0];
         mReferenceViewY = location[1];
     }
@@ -106,7 +115,7 @@ OnboardingOverlay {
     public void dismiss() {
         if (mWindowManager != null
                 && mOverlayView != null
-                &&mOverlayView.isAttachedToWindow()) {
+                && mOverlayView.isAttachedToWindow()) {
             mWindowManager.removeView(mOverlayView);
         }
     }
@@ -130,7 +139,10 @@ OnboardingOverlay {
                 return this;
             }
             int color = ContextCompat.getColor(context, colorRes);
-            this.mBackgroundColor = ColorUtils.setAlphaComponent(color, 0x80);
+            int alpha = color & 0xFF000000;
+            this.mBackgroundColor = alpha == 0xFF
+                    ? color
+                    : ColorUtils.setAlphaComponent(color, 0xA6); //0x80 means 50% transparency
 
             return this;
         }
@@ -157,24 +169,30 @@ OnboardingOverlay {
         public OverLayView(@NonNull Context context) {
             super(context);
             addView(new BackgroundOverlayView(context));
-            addView(createContainer());
+            LinearLayout ll = createContainer();
+            generateLayoutParams(ll);
+            addView(ll);
         }
 
-        private void setMargins(LayoutParams layoutParams){
+        private void generateLayoutParams(LinearLayout ll){
             if(mReferenceView != null && !ViewCompat.isAttachedToWindow(mReferenceView)) {
-                return;
+                return ;
             }
 
-            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+            int leftMargin = (int) DpPxUtils.pxToDp(30);
+            int rightMargin = (int) DpPxUtils.pxToDp(30);
 
-            DisplayMetrics metrics = new DisplayMetrics();
-            mWindowManager.getDefaultDisplay().getMetrics(metrics);
+            int width = DisplayUtils.getWidthScreen(mWindowManager) - leftMargin - rightMargin;
 
-            float cx = (float) (mReferenceViewX + (mReferenceView.getWidth() / 2));
-            float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
+            LayoutParams lp = new LayoutParams(width, LayoutParams.WRAP_CONTENT);
+            ll.setLayoutParams(lp);
+
+            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.UNSPECIFIED);
+            int heightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+            measureChild(ll, widthSpec, heightSpec);
+
 
         }
-
 
         @Override
         protected void onAttachedToWindow() {
@@ -190,7 +208,7 @@ OnboardingOverlay {
                 float cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
                 float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
 
-                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int)cx, (int)cy, 0, heightScreen);
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int) cx, (int) cy, 0, heightScreen);
                 animator.setInterpolator(new AccelerateDecelerateInterpolator());
                 animator.setDuration(500L);
                 animator.start();
@@ -234,14 +252,16 @@ OnboardingOverlay {
             LinearLayout.LayoutParams lptvd = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            lptvd.topMargin = 15;
+            lptvd.topMargin = (int) DpPxUtils.pxToDp(8);
             container.addView(createDescriptionTextView(), lptvd);
 
             //Add button
             LinearLayout.LayoutParams lpbtn = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            lpbtn.topMargin = 15;
+            lpbtn.topMargin = (int) DpPxUtils.pxToDp(8);
+            lpbtn.rightMargin = (int) DpPxUtils.pxToDp(15);
+            lpbtn.gravity = Gravity.END;
             container.addView(createButton(), lpbtn);
 
             return container;
@@ -251,7 +271,7 @@ OnboardingOverlay {
             TextView titleTextView = new TextView(getContext());
             titleTextView.setTextSize(24);
             titleTextView.setTextColor(Color.WHITE);
-            titleTextView.setText("Title Onboarding");
+            titleTextView.setText("Onboarding definition.");
             return titleTextView;
         }
 
@@ -259,7 +279,7 @@ OnboardingOverlay {
             TextView descriptionTextView = new TextView(getContext());
             descriptionTextView.setTextSize(18);
             descriptionTextView.setTextColor(Color.WHITE);
-            descriptionTextView.setText("Description Onboarding");
+            descriptionTextView.setText("An onboarding experience is a way to introduce users to a new product, app, or feature.");
             return descriptionTextView;
         }
 
@@ -271,6 +291,7 @@ OnboardingOverlay {
             button.setText("Got it!");
             button.setStrokeWidth(0);
             button.setRippleColor(ColorStateList.valueOf(Color.WHITE));
+            button.setOnClickListener(v -> { startCloseCircleReveal(); });
             return button;
         }
 
@@ -316,9 +337,9 @@ OnboardingOverlay {
 
         private float mRectSide;
 
-        private final float mRectSpacing = 10;
+        private final float mRectSpacing = DpPxUtils.pxToDp(5);
 
-        private final float mCornerRadius = 15;
+        private final float mCornerRadius = DpPxUtils.pxToDp(8);
 
         private ValueAnimator valueAnimator;
 
@@ -330,16 +351,15 @@ OnboardingOverlay {
 
             mPaintBackground.setColor(mBackgroundColor);
 
-            if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
-                mRadius = (float) Math.max(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
-                mRadius += 8; //Add Extra Spacing
-
-                cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
-                cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
-            }
-
             switch (mMode) {
                 case Mode.CIRCLE:
+                    if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
+                        mRadius = (float)  Math.hypot(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
+                        mRadius += DpPxUtils.pxToDp(4); //Add Extra Spacing
+
+                        cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
+                        cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
+                    }
                     setUpCircleAnimator();
                     break;
                 case Mode.RECTANGLE:
@@ -377,7 +397,8 @@ OnboardingOverlay {
         }
 
         private void setUpRoundRectAnimator() {
-            valueAnimator = ValueAnimator.ofFloat(0f, 15f);
+            float extra = DpPxUtils.pxToDp(8);
+            valueAnimator = ValueAnimator.ofFloat(0f, extra);
             valueAnimator.addUpdateListener(animation -> {
                 mRectSide = (float) animation.getAnimatedValue();
                 invalidate();
@@ -388,7 +409,8 @@ OnboardingOverlay {
         }
 
         private void setUpCircleAnimator() {
-            valueAnimator = ValueAnimator.ofFloat(mRadius, mRadius + 15);
+            float extra = DpPxUtils.pxToDp(8);
+            valueAnimator = ValueAnimator.ofFloat(mRadius, mRadius + extra);
             valueAnimator.addUpdateListener(animation -> {
                 mRadius = (float) animation.getAnimatedValue();
                 invalidate();

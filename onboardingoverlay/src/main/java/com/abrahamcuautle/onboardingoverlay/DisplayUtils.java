@@ -3,12 +3,14 @@ package com.abrahamcuautle.onboardingoverlay;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
+import androidx.annotation.Nullable;
+
 public class DisplayUtils {
     private DisplayUtils() {
 
     }
 
-    public static int getWidthScreen(WindowManager windowManager){
+    public static int getWidthScreen(@Nullable WindowManager windowManager){
         if (windowManager == null){
             return 0;
         }
@@ -17,7 +19,7 @@ public class DisplayUtils {
         return metrics.widthPixels;
     }
 
-    public static int getHeightScreen(WindowManager windowManager){
+    public static int getHeightScreen(@Nullable WindowManager windowManager){
         if (windowManager == null){
             return 0;
         }
