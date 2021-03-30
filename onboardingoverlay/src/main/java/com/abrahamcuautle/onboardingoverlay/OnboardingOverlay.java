@@ -60,15 +60,19 @@ public class OnboardingOverlay {
 
     private int mMode;
 
-    private int mGravityContent;
-
     private boolean mIsShowing;
+
+    private OnDismissListener onDismissListener;
 
     @IntDef({Mode.RECTANGLE, Mode.CIRCLE})
     @Retention(RetentionPolicy.SOURCE)
     @interface Mode {
         int RECTANGLE = 0;
         int CIRCLE = 1;
+    }
+
+    interface OnDismissListener {
+        void onDismiss();
     }
 
     private OnboardingOverlay(Builder builder) {
@@ -117,7 +121,15 @@ public class OnboardingOverlay {
                 && mOverlayView != null
                 && mOverlayView.isAttachedToWindow()) {
             mWindowManager.removeView(mOverlayView);
+            if (onDismissListener != null){
+                onDismissListener.onDismiss();
+            }
         }
+    }
+
+
+    public void setOnDismissListener(OnDismissListener onDismissListener) {
+        this.onDismissListener = onDismissListener;
     }
 
     public static class Builder {
