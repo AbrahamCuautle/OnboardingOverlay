@@ -11,8 +11,6 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.os.Build;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -21,6 +19,7 @@ import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.AbsoluteLayout;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -28,12 +27,15 @@ import android.widget.TextView;
 import androidx.annotation.ColorRes;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.StyleRes;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.ViewKt;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.theme.overlay.MaterialThemeOverlay;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -60,6 +62,15 @@ public class OnboardingOverlay {
 
     private int mMode;
 
+    @StyleRes
+    private int mStyle;
+
+    private String mTextTitle;
+
+    private String mTextDescription;
+
+    private String mTextButton;
+
     private boolean mIsShowing;
 
     private OnDismissListener onDismissListener;
@@ -80,6 +91,10 @@ public class OnboardingOverlay {
         this.mMode = builder.mMode;
         this.mContext = builder.context.get();
         this.mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+        this.mStyle = builder.mStyle;
+        this.mTextTitle = builder.textTitle;
+        this.mTextDescription = builder.textDescription;
+        this.mTextButton = builder.textButton;
     }
 
     public void show(@NonNull View view) {
@@ -141,8 +156,23 @@ public class OnboardingOverlay {
         @Mode
         private int mMode;
 
+        @StyleRes
+        private int mStyle;
+
+        private String textTitle;
+
+        private String textDescription;
+
+        private String textButton;
+
         public Builder(@NonNull Context context) {
             this.context = new WeakReference<>(context);
+        }
+
+
+        public Builder(@NonNull Context context, @StyleRes int styleRes) {
+            this.context = new WeakReference<>(context);
+            this.mStyle = styleRes;
         }
 
         public Builder setBackgroundColor(@ColorRes int colorRes) {
@@ -164,6 +194,21 @@ public class OnboardingOverlay {
             return this;
         }
 
+        public Builder setTitle(String title) {
+            this.textTitle = title;
+            return this;
+        }
+
+        public Builder setDescription(String description) {
+            this.textDescription = description;
+            return this;
+        }
+
+        public Builder setTextButton(String button) {
+            this.textButton = button;
+            return this;
+        }
+
         public OnboardingOverlay build()  {
             return new OnboardingOverlay(this);
         }
@@ -181,8 +226,10 @@ public class OnboardingOverlay {
         public OverLayView(@NonNull Context context) {
             super(context);
             addView(new BackgroundOverlayView(context));
-            LinearLayout ll = createContainer();
-            generateLayoutParams(ll);
+            /*ContextThemeWrapper ctx = new ContextThemeWrapper(mContext, R.style.OnboardingOverlayStyle);
+            View ll = View.inflate(ctx, R.layout.onboarding_content, null);*/
+            //generateLayoutParams(ll);
+            View ll = createContainer();
             addView(ll);
         }
 
@@ -255,7 +302,7 @@ public class OnboardingOverlay {
         }
 
         private LinearLayout createContainer() {
-            LinearLayout container = new LinearLayout(getContext());
+            LinearLayout container = new LinearLayout(mContext);
             container.setOrientation(LinearLayout.VERTICAL);
 
             //Add Title TextView
@@ -284,31 +331,28 @@ public class OnboardingOverlay {
         }
 
         private TextView createTitleTextView() {
-            TextView titleTextView = new TextView(getContext());
-            titleTextView.setTextSize(24);
-            titleTextView.setTextColor(Color.WHITE);
-            titleTextView.setText("Onboarding definition.");
+            TextView titleTextView = new TextView(resolveTheme(), null, R.attr.onboardingTitleStyle);
+            titleTextView.setText(mTextTitle);
             return titleTextView;
         }
 
         private TextView createDescriptionTextView() {
-            TextView descriptionTextView = new TextView(getContext());
-            descriptionTextView.setTextSize(18);
-            descriptionTextView.setTextColor(Color.WHITE);
-            descriptionTextView.setText("An onboarding experience is a way to introduce users to a new product, app, or feature.");
+            TextView descriptionTextView = new TextView(resolveTheme(),null, R.attr.onboardingDescriptionStyle);
+            descriptionTextView.setText(mTextDescription);
             return descriptionTextView;
         }
 
         private MaterialButton createButton() {
-            MaterialButton button = new MaterialButton(
-                    getContext(), null, R.attr.materialButtonOutlinedStyle);
-            button.setTextSize(14);
-            button.setTextColor(Color.WHITE);
-            button.setText("Got it!");
-            button.setStrokeWidth(0);
-            button.setRippleColor(ColorStateList.valueOf(Color.WHITE));
+            MaterialButton button = new MaterialButton(resolveTheme(), null, R.attr.onboardingButtonStyle);
+            button.setText(mTextButton);
             button.setOnClickListener(v -> { startCloseCircleReveal(); });
             return button;
+        }
+
+        private Context resolveTheme(){
+            return mStyle == 0
+                    ? new ContextThemeWrapper(getContext(), R.style.OnboardingOverlayStyle)
+                    : new ContextThemeWrapper(getContext(), mStyle);
         }
 
         @Override

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="onboardingTitleStyle" format="reference"/>
+    <attr name="onboardingDescriptionStyle" format="reference"/>
+    <attr name="onboardingButtonStyle" format="reference"/>
+</resources>

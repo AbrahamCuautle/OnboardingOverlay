@@ -1,6 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="M" parent="Widget.MaterialComponents.Button.TextButton">
 
+    <style name="OnboardingTitleStyle" parent="Widget.MaterialComponents.TextView">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:fontFamily">@font/inter_medium</item>
     </style>
+
+    <style name="OnboardingDescriptionStyle" parent="Widget.MaterialComponents.TextView">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:fontFamily">@font/inter_regular</item>
+    </style>
+
+    <style name="OnboardingButtonStyle" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:fontFamily">@font/inter_semi_bold</item>
+        <item name="rippleColor">@android:color/white</item>
+    </style>
+
+    <style name="OnboardingOverlayStyle">
+        <item name="onboardingTitleStyle">@style/OnboardingTitleStyle</item>
+        <item name="onboardingDescriptionStyle">@style/OnboardingDescriptionStyle</item>
+        <item name="onboardingButtonStyle">@style/OnboardingButtonStyle</item>
+    </style>
+
 </resources>

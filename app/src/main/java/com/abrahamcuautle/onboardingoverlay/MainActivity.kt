@@ -13,6 +13,9 @@ class MainActivity : AppCompatActivity() {
             OnboardingOverlay.Builder(this)
                 .setBackgroundColor(android.R.color.black)
                 .setMode(OnboardingOverlay.Mode.CIRCLE)
+                .setTitle("What's an onboarding?")
+                .setDescription("An onboarding experience is a way to introduce users to a new product, app, or feature.")
+                .setTextButton("Got it!")
                 .build()
                 .show(findViewById(R.id.btn))
         }
@@ -21,7 +24,10 @@ class MainActivity : AppCompatActivity() {
             OnboardingOverlay.Builder(this)
                     .setBackgroundColor(R.color.design_default_color_secondary_variant)
                     .setMode(OnboardingOverlay.Mode.CIRCLE)
-                    .build()
+                    .setTitle("What's an onboarding?")
+                    .setDescription("An onboarding experience is a way to introduce users to a new product, app, or feature.")
+                    .setTextButton("Got it!")
+                        .build()
                     .show(findViewById(R.id.btn1))
         }
 
@@ -29,6 +35,9 @@ class MainActivity : AppCompatActivity() {
             OnboardingOverlay.Builder(this)
                     .setBackgroundColor(R.color.purple_200)
                     .setMode(OnboardingOverlay.Mode.RECTANGLE)
+                    .setTitle("What's an onboarding?")
+                    .setDescription("An onboarding experience is a way to introduce users to a new product, app, or feature.")
+                    .setTextButton("Got it!")
                     .build()
                     .show(findViewById(R.id.btn2))
         }
@@ -37,6 +46,9 @@ class MainActivity : AppCompatActivity() {
             OnboardingOverlay.Builder(this)
                     .setBackgroundColor(R.color.design_default_color_primary_variant)
                     .setMode(OnboardingOverlay.Mode.RECTANGLE)
+                    .setTitle("What's an onboarding?")
+                    .setDescription("An onboarding experience is a way to introduce users to a new product, app, or feature.")
+                    .setTextButton("Got it!")
                     .build()
                     .show(findViewById(R.id.btn3))
         }
