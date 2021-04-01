@@ -216,11 +216,13 @@ public class OnboardingOverlay {
             if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
 
                 int heightScreen = DisplayUtils.getHeightScreen(mWindowManager);
+                int widthScreen = DisplayUtils.getWidthScreen(mWindowManager);
+                int endRadius = Math.max(heightScreen, widthScreen);
 
                 float cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
                 float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
 
-                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int) cx, (int) cy, 0, heightScreen);
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int) cx, (int) cy, 0, endRadius);
                 animator.setInterpolator(new AccelerateDecelerateInterpolator());
                 animator.setDuration(500L);
                 animator.start();
@@ -230,12 +232,14 @@ public class OnboardingOverlay {
         private void startCloseCircleReveal() {
             if(mReferenceView != null && ViewCompat.isAttachedToWindow(mReferenceView)){
 
-                int height = DisplayUtils.getHeightScreen(mWindowManager);
+                int heightScreen = DisplayUtils.getHeightScreen(mWindowManager);
+                int widthScreen = DisplayUtils.getWidthScreen(mWindowManager);
+                int startRadius = Math.max(heightScreen, widthScreen);
 
                 float cx = (float) (mReferenceViewX +  (mReferenceView.getWidth() / 2));
                 float cy = (float) (mReferenceViewY + (mReferenceView.getHeight() / 2));
 
-                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int) cx, (int) cy, height, 0);
+                Animator animator = ViewAnimationUtils.createCircularReveal(mOverlayView, (int) cx, (int) cy, startRadius, 0);
                 animator.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
