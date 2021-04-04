@@ -8,9 +8,11 @@ import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
@@ -37,9 +39,12 @@ import androidx.core.view.ViewKt;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.theme.overlay.MaterialThemeOverlay;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
+import java.util.Timer;
 
 import kotlin.Unit;
 import kotlin.jvm.functions.Function1;
@@ -184,7 +189,7 @@ public class OnboardingOverlay {
             int alpha = color & 0xFF000000;
             this.mBackgroundColor = alpha == 0xFF
                     ? color
-                    : ColorUtils.setAlphaComponent(color, 0xA6); //0x80 means 50% transparency
+                    : ColorUtils.setAlphaComponent(color, 0xCC); //0xCC means 80% transparency
 
             return this;
         }
@@ -217,19 +222,12 @@ public class OnboardingOverlay {
 
     private class OverLayView extends FrameLayout {
 
-        /*private TextView titleTextView;
-
-        private TextView descriptionTextView;
-
-        private MaterialButton button;*/
-
         public OverLayView(@NonNull Context context) {
             super(context);
             addView(new BackgroundOverlayView(context));
-            /*ContextThemeWrapper ctx = new ContextThemeWrapper(mContext, R.style.OnboardingOverlayStyle);
-            View ll = View.inflate(ctx, R.layout.onboarding_content, null);*/
-            //generateLayoutParams(ll);
-            View ll = createContainer();
+            LinearLayout ll = createContainer();
+            //ll.setBackgroundColor(Color.BLUE);
+            generateLayoutParams(ll);
             addView(ll);
         }
 
@@ -241,16 +239,190 @@ public class OnboardingOverlay {
             int leftMargin = (int) DpPxUtils.pxToDp(30);
             int rightMargin = (int) DpPxUtils.pxToDp(30);
 
-            int width = DisplayUtils.getWidthScreen(mWindowManager) - leftMargin - rightMargin;
+            int widthScreen = DisplayUtils.getWidthScreen(mWindowManager);
+            int heightScreen = DisplayUtils.getHeightScreen(mWindowManager);
 
-            LayoutParams lp = new LayoutParams(width, LayoutParams.WRAP_CONTENT);
+            int widthContent =  Math.min(widthScreen, heightScreen) - leftMargin - rightMargin;
+
+            LayoutParams lp = new LayoutParams(widthContent, LayoutParams.WRAP_CONTENT);
             ll.setLayoutParams(lp);
 
-            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.UNSPECIFIED);
+            int widthSpec = MeasureSpec.makeMeasureSpec(widthContent, MeasureSpec.EXACTLY);
             int heightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
             measureChild(ll, widthSpec, heightSpec);
 
+            //Space Available acordding to mReferenceView position
+            int leftSpaceAvailable = mReferenceViewX;
+            int topSpaceAvailable = mReferenceViewY;
+            int rightSpaceAvailable = widthScreen - (mReferenceViewX + mReferenceView.getWidth());
+            int bottomSpaceAvailable = heightScreen - (mReferenceViewY + mReferenceView.getHeight());
 
+            int maxXAxis = Math.max(topSpaceAvailable, bottomSpaceAvailable);
+            int maxYAxis = Math.max(rightSpaceAvailable, leftSpaceAvailable);
+            int maxSpace = Math.max(maxXAxis, maxYAxis);
+
+            if (maxSpace == topSpaceAvailable) {
+                //More space available on top of mReferenceView
+                lp.gravity = Gravity.BOTTOM;
+                lp.bottomMargin = getBottomMargin();
+
+                lp.leftMargin = leftMargin;
+                lp.rightMargin = rightMargin;
+            } else if (maxSpace == bottomSpaceAvailable) {
+                //More space available on bottom of mReferenceView
+                lp.gravity = Gravity.TOP;
+                lp.topMargin = getTopMargin();
+
+                lp.leftMargin = leftMargin;
+                lp.rightMargin = rightMargin;
+            } else if (maxSpace == leftSpaceAvailable) {
+                lp.rightMargin = getRightMargin();
+                lp.width = adjustWidthAccordingToLeftSpaceAvailable(leftSpaceAvailable, widthContent);
+
+                if (topSpaceAvailable > bottomSpaceAvailable) {
+                    lp.gravity = Gravity.END | Gravity.BOTTOM;
+                    lp.bottomMargin = heightScreen
+                            - mReferenceViewY
+                            - mReferenceView.getHeight()
+                            - getMissingBottomMargin(topSpaceAvailable, ll);
+
+                } else {
+                    lp.gravity = Gravity.END | Gravity.TOP;
+                    lp.topMargin = mReferenceViewY
+                            + mReferenceView.getHeight()
+                            + getMissingTopMargin(bottomSpaceAvailable, ll);
+                }
+
+            } else {
+                lp.leftMargin = getLeftMargin();
+                lp.width = adjustWidthAccordingToRightSpaceAvailable(rightSpaceAvailable, widthContent);
+
+                if (topSpaceAvailable > bottomSpaceAvailable) {
+                    lp.gravity = Gravity.START | Gravity.BOTTOM;
+                    lp.bottomMargin = heightScreen
+                            - mReferenceViewY
+                            - mReferenceView.getHeight()
+                            - getMissingBottomMargin(topSpaceAvailable, ll);
+                } else {
+                    lp.gravity = Gravity.START | Gravity.TOP;
+                    lp.topMargin = mReferenceViewY
+                            + mReferenceView.getHeight()
+                            + getMissingTopMargin(bottomSpaceAvailable, ll);
+                }
+            }
+
+            ll.requestLayout();
+
+        }
+
+        private int adjustWidthAccordingToLeftSpaceAvailable(int leftSpaceAvailable, int widthContent) {
+            return leftSpaceAvailable > widthContent
+                    ? widthContent
+                    : leftSpaceAvailable - (int) DpPxUtils.pxToDp(30); //15dp for rightMargin & 15dp for leftMargin
+        }
+
+        private int adjustWidthAccordingToRightSpaceAvailable(int rightSpaceAvailable, int widthContent) {
+            return rightSpaceAvailable > widthContent
+                    ? widthContent
+                    : rightSpaceAvailable - (int) DpPxUtils.pxToDp(30); //15dp for rightMargin & 15dp for leftMargin
+        }
+
+        private int getMissingTopMargin(int bottomSpaceAvailable, @NotNull LinearLayout content) {
+            return bottomSpaceAvailable > content.getMeasuredHeight()
+                    ? 0
+                    : bottomSpaceAvailable - content.getMeasuredHeight();
+        }
+
+        private int getMissingBottomMargin(int topSpaceAvailable, @NotNull LinearLayout content) {
+            return topSpaceAvailable > content.getMeasuredHeight()
+                    ? 0
+                    : topSpaceAvailable - content.getMeasuredHeight();
+        }
+
+        private int getRightMargin() {
+            int rightMargin = 0;
+            int widthScreen = DisplayUtils.getWidthScreen(mWindowManager);
+            switch (mMode) {
+                case Mode.CIRCLE:
+                    double mRadius = Math.hypot(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
+                    rightMargin = widthScreen
+                            - mReferenceViewX - mReferenceView.getWidth() / 2
+                            + (int) mRadius
+                            + (int) DpPxUtils.pxToDp(4) //extra spacing
+                            + (int) DpPxUtils.pxToDp(8); //end radius for animation;
+                    break;
+                case Mode.RECTANGLE:
+                    rightMargin = widthScreen
+                            - mReferenceViewX
+                            + (int) DpPxUtils.pxToDp(5) //extra spacing
+                            + (int) DpPxUtils.pxToDp(8); //end radius for animation;
+                    break;
+            }
+            return rightMargin;
+        }
+
+        private int getLeftMargin() {
+            int leftMargin = 0;
+            switch (mMode) {
+                case Mode.CIRCLE:
+                    double mRadius = Math.hypot(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
+                    leftMargin = mReferenceViewX
+                            + mReferenceView.getWidth() / 2
+                            + (int) mRadius
+                            + (int) DpPxUtils.pxToDp(4)
+                            + (int) DpPxUtils.pxToDp(8);
+                    break;
+                case Mode.RECTANGLE:
+                    leftMargin = mReferenceViewX
+                            + mReferenceView.getWidth()
+                            + (int) DpPxUtils.pxToDp(5) //extra spacing
+                            + (int) DpPxUtils.pxToDp(8); //end radius for animation;
+                    break;
+            }
+            return leftMargin;
+        }
+
+        private int getBottomMargin() {
+            int bottomMargin = 0;
+            int heightScreen = DisplayUtils.getHeightScreen(mWindowManager);
+            switch (mMode) {
+                case Mode.CIRCLE:
+                    double mRadius = Math.hypot(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
+                    bottomMargin = heightScreen
+                            - mReferenceViewY - mReferenceView.getHeight() / 2
+                            + (int) mRadius
+                            + (int) DpPxUtils.pxToDp(4)
+                            + (int) DpPxUtils.pxToDp(8);
+                    break;
+                case Mode.RECTANGLE:
+                    bottomMargin = heightScreen
+                            - mReferenceViewY
+                            + (int) DpPxUtils.pxToDp(5) //extra spacing
+                            + (int) DpPxUtils.pxToDp(8); //end radius for animation;;
+                    break;
+            }
+            return bottomMargin;
+        }
+
+        private int getTopMargin() {
+            int topMargin = 0;
+            switch (mMode){
+                case Mode.CIRCLE:
+                    double mRadius = Math.hypot(mReferenceView.getWidth(), mReferenceView.getHeight()) / 2;
+                    topMargin = mReferenceViewY
+                            + (mReferenceView.getHeight() / 2)
+                            + (int) Math.round(mRadius)
+                            + (int) DpPxUtils.pxToDp(4) //extra space
+                            + (int) DpPxUtils.pxToDp(8); //end radius for animation
+                    break;
+                case Mode.RECTANGLE:
+                    topMargin = mReferenceViewY
+                            + mReferenceView.getHeight()
+                            + (int) DpPxUtils.pxToDp(5) //extra spacing
+                            + (int) DpPxUtils.pxToDp(8); //end radius for animation
+                    break;
+            }
+            return topMargin;
         }
 
         @Override
@@ -322,7 +494,6 @@ public class OnboardingOverlay {
             LinearLayout.LayoutParams lpbtn = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            lpbtn.topMargin = (int) DpPxUtils.pxToDp(8);
             lpbtn.rightMargin = (int) DpPxUtils.pxToDp(15);
             lpbtn.gravity = Gravity.END;
             container.addView(createButton(), lpbtn);
@@ -330,25 +501,29 @@ public class OnboardingOverlay {
             return container;
         }
 
+        @NotNull
         private TextView createTitleTextView() {
             TextView titleTextView = new TextView(resolveTheme(), null, R.attr.onboardingTitleStyle);
             titleTextView.setText(mTextTitle);
             return titleTextView;
         }
 
+        @NotNull
         private TextView createDescriptionTextView() {
             TextView descriptionTextView = new TextView(resolveTheme(),null, R.attr.onboardingDescriptionStyle);
             descriptionTextView.setText(mTextDescription);
             return descriptionTextView;
         }
 
+        @NotNull
         private MaterialButton createButton() {
             MaterialButton button = new MaterialButton(resolveTheme(), null, R.attr.onboardingButtonStyle);
             button.setText(mTextButton);
-            button.setOnClickListener(v -> { startCloseCircleReveal(); });
+            button.setOnClickListener(v -> startCloseCircleReveal());
             return button;
         }
 
+        @NotNull
         private Context resolveTheme(){
             return mStyle == 0
                     ? new ContextThemeWrapper(getContext(), R.style.OnboardingOverlayStyle)
