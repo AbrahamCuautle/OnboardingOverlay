@@ -94,7 +94,7 @@ public class OnboardingOverlay {
     private OnboardingOverlay(Builder builder) {
         this.mContext = builder.context.get();
         this.mBackgroundColor = builder.mBackgroundColor == -1
-                ? ContextCompat.getColor(mContext, android.R.color.black)
+                ? ColorUtils.setAlphaComponent(ContextCompat.getColor(mContext, android.R.color.black), 0xCC)
                 : builder.mBackgroundColor;
         this.mMode = builder.mMode;
         this.mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
