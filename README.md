@@ -1,7 +1,7 @@
 
 A showcase library to introduce to users a new feature
 
-![Screenshot](https://github.com/AbrahamCuautle/PageIndicatorView/blob/main/screenshots/demo-overlay.gif)
+![Screenshot](https://github.com/AbrahamCuautle/OnboardingOverlay/blob/main/screenshots/demo-overlay.gif)
 
 ## Usage
 ```
