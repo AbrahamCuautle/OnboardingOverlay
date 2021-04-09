@@ -1,5 +1,7 @@
 # Onboarding Overlay
 
+<img src="https://img.shields.io/badge/status-development-brightgreen"/>
+
 A showcase library to introduce users to a new feature
 
 ![Screenshot](https://github.com/AbrahamCuautle/OnboardingOverlay/blob/main/screenshots/demo-overlay.gif)
