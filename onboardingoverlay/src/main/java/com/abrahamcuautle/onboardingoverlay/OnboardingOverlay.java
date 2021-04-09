@@ -53,7 +53,7 @@ public class OnboardingOverlay {
 
     private WindowManager mWindowManager;
 
-    private final int mBackgroundColor;
+    private int mBackgroundColor;
 
     private final Context mContext;
 
@@ -92,9 +92,11 @@ public class OnboardingOverlay {
     }
 
     private OnboardingOverlay(Builder builder) {
-        this.mBackgroundColor = builder.mBackgroundColor;
-        this.mMode = builder.mMode;
         this.mContext = builder.context.get();
+        this.mBackgroundColor = builder.mBackgroundColor == -1
+                ? ContextCompat.getColor(mContext, android.R.color.black)
+                : builder.mBackgroundColor;
+        this.mMode = builder.mMode;
         this.mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         this.mStyle = builder.mStyle;
         this.mTextTitle = builder.textTitle;
@@ -125,6 +127,7 @@ public class OnboardingOverlay {
         mOverlayView = new OverLayView(mContext);
 
         if (mWindowManager != null) {
+            mIsShowing = true;
             mWindowManager.addView(mOverlayView, lp);
         }
     }
@@ -140,6 +143,7 @@ public class OnboardingOverlay {
         if (mWindowManager != null
                 && mOverlayView != null
                 && mOverlayView.isAttachedToWindow()) {
+            mIsShowing = false;
             mWindowManager.removeView(mOverlayView);
             if (onDismissListener != null){
                 onDismissListener.onDismiss();
@@ -147,6 +151,9 @@ public class OnboardingOverlay {
         }
     }
 
+    private boolean isShowing() {
+        return mIsShowing;
+    }
 
     public void setOnDismissListener(OnDismissListener onDismissListener) {
         this.onDismissListener = onDismissListener;
@@ -156,7 +163,7 @@ public class OnboardingOverlay {
 
         private WeakReference<Context> context;
 
-        private int mBackgroundColor;
+        private int mBackgroundColor = -1;
 
         @Mode
         private int mMode;
@@ -173,7 +180,6 @@ public class OnboardingOverlay {
         public Builder(@NonNull Context context) {
             this.context = new WeakReference<>(context);
         }
-
 
         public Builder(@NonNull Context context, @StyleRes int styleRes) {
             this.context = new WeakReference<>(context);
