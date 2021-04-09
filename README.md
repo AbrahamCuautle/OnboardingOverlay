@@ -1,6 +1,6 @@
 # Onboarding Overlay
 
-A showcase library to introduce to users a new feature
+A showcase library to introduce users to a new feature
 
 ![Screenshot](https://github.com/AbrahamCuautle/OnboardingOverlay/blob/main/screenshots/demo-overlay.gif)
 
