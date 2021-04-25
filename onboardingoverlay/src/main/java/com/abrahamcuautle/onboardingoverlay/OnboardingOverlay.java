@@ -93,9 +93,7 @@ public class OnboardingOverlay {
 
     private OnboardingOverlay(Builder builder) {
         this.mContext = builder.context.get();
-        this.mBackgroundColor = builder.mBackgroundColor == -1
-                ? ColorUtils.setAlphaComponent(ContextCompat.getColor(mContext, android.R.color.black), 0xCC)
-                : builder.mBackgroundColor;
+        this.mBackgroundColor = builder.mBackgroundColor;
         this.mMode = builder.mMode;
         this.mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         this.mStyle = builder.mStyle;
@@ -178,12 +176,13 @@ public class OnboardingOverlay {
         private String textButton;
 
         public Builder(@NonNull Context context) {
-            this.context = new WeakReference<>(context);
+            this(context, 0);
         }
 
         public Builder(@NonNull Context context, @StyleRes int styleRes) {
             this.context = new WeakReference<>(context);
             this.mStyle = styleRes;
+            setBackgroundColor(android.R.color.black);
         }
 
         public Builder setBackgroundColor(@ColorRes int colorRes) {
