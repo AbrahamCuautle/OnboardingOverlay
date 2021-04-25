@@ -1,11 +1,13 @@
 # Onboarding Overlay
 
-A showcase library to introduce to users a new feature
+<img src="https://img.shields.io/badge/status-development-brightgreen"/>
+
+A showcase library to introduce users to a new feature
 
 ![Screenshot](https://github.com/AbrahamCuautle/OnboardingOverlay/blob/main/screenshots/demo-overlay.gif)
 
 ## Usage
-```
+```java
 OnboardingOverlay.Builder(context)
                     //Set overlay background color. By default is black with 85% of transparency
                     //if you set a solid background color, alpha color's channel will be 85% 
@@ -28,7 +30,7 @@ Then you could use [View KTX extensions](https://developer.android.com/reference
 
 Additionally, you can style the text and button by passing a style resource:
 
-```
+```xml
     <style name="OnboardingTitleStyle" parent="Widget.MaterialComponents.TextView">
         <item name="android:textSize">20sp</item>
         <item name="android:textColor">@android:color/white</item>
@@ -56,6 +58,6 @@ Additionally, you can style the text and button by passing a style resource:
     
 ```
 
-```
+```java
 OnboardingOverlay.Builder(context, R.style.OnboardingOverlayStyle)
 ```
