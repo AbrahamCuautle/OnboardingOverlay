@@ -6,6 +6,24 @@ A showcase library to introduce users to a new feature
 
 ![Screenshot](https://github.com/AbrahamCuautle/OnboardingOverlay/blob/main/screenshots/demo-overlay.gif)
 
+## Installation
+
+Add this in your root `build.gradle` file:
+```gradle
+allprojects {
+    repositories {
+        maven { url "https://www.jitpack.io" }
+    }
+}
+```
+
+Then, add the library to your module `build.gradle`:
+```gradle
+dependencies {
+    implementation 'com.github.AbrahamCuautle:OnboardingOverlay:{latest_version}'
+}
+```
+
 ## Usage
 ```java
 OnboardingOverlay.Builder(context)
@@ -24,9 +42,9 @@ OnboardingOverlay.Builder(context)
                     .show(your_view)
 ```
 
-__Note:__ The view you passed to ```show``` method, must be laid out otherwise library will throw an exception. 
-Sometimes you will need to show it in Activity ```onCreate()``` or Fragment ```onViewCreated()``` method and you make sure you view is laid out. 
-Then you could use [View KTX extensions](https://developer.android.com/reference/kotlin/androidx/core/view/package-summary#doonpredraw) such as ```View.doOnPreDraw()``` 
+__Note:__ The view you take as reference  ```show```, must be laid out otherwise library will throw an exception. 
+In case you need to set up this library when your Activity or Fragment has been created (```onCreate()``` or ```onViewCreated()``` respectively),
+you could use [View KTX extensions](https://developer.android.com/reference/kotlin/androidx/core/view/package-summary#doonpredraw) (such as ```View.doOnPreDraw()```) to avoid the exception mentioned before.
 
 Additionally, you can style the text and button by passing a style resource:
 
